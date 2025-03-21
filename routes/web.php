@@ -64,6 +64,10 @@ Route::middleware(['auth', 'role:loanofficer'])->group(function () {
     Route::post("/loanofficer/loan/store",[LoanController::class,"loanstore"])->name("loanofficer.loan.store");
 
     Route::get('/api/get-loan-product/{id}', [LoanController::class, 'getLoanProduct']);
+
+    Route::get('/loanofficer/loan-calculator', [LoanController::class, 'calculaterview'])->name('loanofficer.loan.calculatorview');
+    Route::post('/loanofficer/loan-calculate', [LoanController::class, 'calculate'])->name('loanofficer.calculate.loan');
+    Route::get("/loanofficer/loan-product",[LoanofficerController::class,"loanproduct"])->name("loanofficer.details.loanproduct");
 });
 
 

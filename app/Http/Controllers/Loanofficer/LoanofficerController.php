@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Loanofficer;
 use App\Models\Loan;
+use App\Models\Loanproduct;
 use App\Models\Member;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
@@ -82,5 +83,11 @@ class LoanofficerController extends Controller
     {
         $loans = Loan::with(['loanProduct', 'borrower'])->get();
         return view("loanofficer.loandetails")->with(compact("loans"));
+    }
+
+    public function loanproduct()
+    {
+        $loanproduct = Loanproduct::all();
+        return view("loanofficer.loanproduct")->with(compact("loanproduct"));
     }
 }

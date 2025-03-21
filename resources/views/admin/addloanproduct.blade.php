@@ -56,9 +56,7 @@
                                    class="text-danger">*</span></label>
                          <select class="form-select" id="interest_type" name="interest_type" required>
                               <option value="Flat Rate">Flat Rate</option>
-                              <option value="Mortgage amortization">Mortgage amortization</option>
                               <option value="Reducing Amount">Reducing Amount</option>
-                              <option value="One-time payment">One-time payment</option>
                          </select>
                     </div>
                </div>

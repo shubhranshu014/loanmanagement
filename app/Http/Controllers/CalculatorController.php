@@ -21,10 +21,10 @@ class CalculatorController extends Controller
             'term_period' => 'required|string|in:month,year',
             'late_payment_penalties' => 'required|numeric|min:0',
             'first_payment_date' => 'required|date',
-            'loan_application_fee' => 'required|numeric|min:0',
-            'loan_application_fee_type' => 'required|string|in:Fixed,Percentage',
-            'loan_processing_fee' => 'required|numeric|min:0',
-            'loan_processing_fee_type' => 'required|string|in:Fixed,Percentage',
+            // 'loan_application_fee' => 'required|numeric|min:0',
+            // 'loan_application_fee_type' => 'required|string|in:Fixed,Percentage',
+            // 'loan_processing_fee' => 'required|numeric|min:0',
+            // 'loan_processing_fee_type' => 'required|string|in:Fixed,Percentage',
         ]);
 
         // Extract input values
@@ -46,17 +46,17 @@ class CalculatorController extends Controller
         $balance = $loanAmount;
         $totalPayingAmount = 0; // To store the total paying amount
 
-        // Calculate loan application fee and processing fee
-        $loanApplicationFee = ($request->loan_application_fee_type === 'Percentage')
-            ? $loanAmount * ($request->loan_application_fee / 100)
-            : $request->loan_application_fee;
+        // // Calculate loan application fee and processing fee
+        // $loanApplicationFee = ($request->loan_application_fee_type === 'Percentage')
+        //     ? $loanAmount * ($request->loan_application_fee / 100)
+        //     : $request->loan_application_fee;
 
-        $loanProcessingFee = ($request->loan_processing_fee_type === 'Percentage')
-            ? $loanAmount * ($request->loan_processing_fee / 100)
-            : $request->loan_processing_fee;
+        // $loanProcessingFee = ($request->loan_processing_fee_type === 'Percentage')
+        //     ? $loanAmount * ($request->loan_processing_fee / 100)
+        //     : $request->loan_processing_fee;
 
-        // Add fees to the loan amount
-        $balance += $loanApplicationFee + $loanProcessingFee;
+        // // Add fees to the loan amount
+        // $balance += $loanApplicationFee + $loanProcessingFee;
 
         // Calculate repayment schedule based on interest type
         switch ($interestType) {
@@ -111,31 +111,6 @@ class CalculatorController extends Controller
                 }
                 break;
 
-            case 'Mortgage Amortization':
-                // Mortgage Amortization: Similar to Fixed Rate, with equal monthly payments
-                $monthlyInterestRate = $interestRate / 12;
-                $monthlyPayment = $loanAmount * $monthlyInterestRate / (1 - pow(1 + $monthlyInterestRate, -$term));
-
-                for ($i = 1; $i <= $term; $i++) {
-                    $interest = $balance * $monthlyInterestRate;
-                    $principal = $monthlyPayment - $interest;
-                    $balance -= $principal;
-                    $latePaymentPenalty = $balance * $latePaymentPenaltyRate;
-                    $amountToPay = $monthlyPayment + $latePaymentPenalty;
-
-                    $schedule[] = [
-                        'payment_date' => date('Y-m-d', strtotime("$firstPaymentDate +" . ($i - 1) . " months")),
-                        'principal_amount' => $principal,
-                        'interest' => $interest,
-                        'late_payment_penalty' => $latePaymentPenalty,
-                        'amount_to_pay' => $amountToPay,
-                        'balance' => max($balance, 0),
-                    ];
-
-                    $totalPayingAmount += $amountToPay;
-                }
-                break;
-
             case 'Reducing Amount':
                 // Reducing Amount: Principal is reduced equally each month, and interest is calculated on the remaining balance
                 $monthlyPrincipal = $loanAmount / $term;
@@ -162,25 +137,6 @@ class CalculatorController extends Controller
                 }
                 break;
 
-            case 'One-time Payment':
-                // One-time Payment: Entire loan amount and interest are paid at the end of the term
-                $totalInterest = $loanAmount * $interestRate * ($term / 12);
-                $totalPayment = $loanAmount + $totalInterest;
-                $latePaymentPenalty = $loanAmount * $latePaymentPenaltyRate;
-                $amountToPay = $totalPayment + $latePaymentPenalty;
-
-                $schedule[] = [
-                    'payment_date' => date('Y-m-d', strtotime("$firstPaymentDate +" . ($term - 1) . " months")),
-                    'principal_amount' => $loanAmount,
-                    'interest' => $totalInterest,
-                    'late_payment_penalty' => $latePaymentPenalty,
-                    'amount_to_pay' => $amountToPay,
-                    'balance' => 0,
-                ];
-
-                $totalPayingAmount = $amountToPay;
-                break;
-
             default:
                 return response()->json(['error' => 'Invalid interest type'], 400);
         }
@@ -190,70 +146,4 @@ class CalculatorController extends Controller
             'total_paying_amount' => $totalPayingAmount, // Pass total paying amount to the response
         ]);
     }
-    // public function calculate(Request $request)
-    // {
-    //     $request->validate([
-    //         'loan_amount' => 'required|numeric|min:1',
-    //         'interest_rate' => 'required|numeric|min:0',
-    //         'interest_type' => 'required|string',
-    //         'term' => 'required|integer|min:1',
-    //         'term_period' => 'required|string',
-    //         'loan_application_fee' => 'required|numeric|min:0',
-    //         'loan_application_fee_type' => 'required|string',
-    //         'loan_processing_fee' => 'required|numeric|min:0',
-    //         'loan_processing_fee_type' => 'required|string',
-    //         'late_payment_penalties' => 'required|numeric|min:0',
-    //         'first_payment_date' => 'required|date',
-    //     ]);
-
-    //     $loanAmount = $request->loan_amount;
-    //     $interestRate = $request->interest_rate / 100 / 12;
-    //     $term = $request->term;
-    //     $balance = $loanAmount;
-    //     $monthlyPayment = $loanAmount * $interestRate / (1 - pow(1 + $interestRate, -$term));
-    //     $schedule = [];
-    //     $firstPaymentDate = Carbon::parse($request->first_payment_date);
-    //     $latePaymentPenaltyRate = $request->late_payment_penalties / 100;
-
-    //     // Calculate loan fees
-    //     $loanApplicationFee = ($request->loan_application_fee_type === 'Percentage') ?
-    //         ($loanAmount * $request->loan_application_fee / 100) : $request->loan_application_fee;
-
-    //     $loanProcessingFee = ($request->loan_processing_fee_type === 'Percentage') ?
-    //         ($loanAmount * $request->loan_processing_fee / 100) : $request->loan_processing_fee;
-
-    //     $totalPayableAmount = 0;
-
-    //     for ($i = 1; $i <= $term; $i++) {
-    //         $interest = $balance * $interestRate;
-    //         $principal = $monthlyPayment - $interest;
-    //         $balance -= $principal;
-    //         $paymentDate = $firstPaymentDate->copy()->addMonths($i);
-
-    //         // Late payment penalty calculation
-    //         $latePaymentPenalty = ($latePaymentPenaltyRate > 0) ? $monthlyPayment * $latePaymentPenaltyRate : 0;
-    //         $amountToPay = $monthlyPayment + $latePaymentPenalty;
-    //         $totalPayableAmount += $amountToPay;
-
-    //         $schedule[] = [
-    //             'payment_date' => $paymentDate->format('Y-m-d'),
-    //             'principal_amount' => $principal,
-    //             'interest' => $interest,
-    //             'late_payment_penalty' => $latePaymentPenalty,
-    //             'amount_to_pay' => $amountToPay,
-    //             'balance' => max($balance, 0)
-    //         ];
-    //     }
-
-    //     $totalPayableAmount += $loanApplicationFee + $loanProcessingFee;
-
-    //     return response()->json([
-    //         'schedule' => $schedule,
-    //         'loan_application_fee' => $loanApplicationFee,
-    //         'loan_processing_fee' => $loanProcessingFee,
-    //         'total_payable_amount' => $totalPayableAmount
-    //     ]);
-    // }
-
-
 }
